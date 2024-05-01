@@ -1,5 +1,5 @@
 # FaceRecognition
 
-'''bash
-pip install tf-keras
-'''
+```bash
+pip3 install tf-keras
+```
