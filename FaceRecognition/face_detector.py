@@ -47,6 +47,8 @@ def remove_non_single_faces(image_paths):
         new_img_path = image_paths + "/" + img
         if new_img_path.endswith(".jpg"):
             img = cv2.imread(new_img_path)
+
+            print("img check:", img)
             gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
 
