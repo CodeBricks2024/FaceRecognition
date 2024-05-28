@@ -8,15 +8,18 @@ import face_detector
 import coremltools as ct
 from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Flatten, MaxPooling2D, Conv2D
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 
 # FASTAPI 초기화
 app = FastAPI()
 
+saved_model = load_model("FaceFinder_model.h5")
+
 # 라벨 매핑 (예시)
 label_map = {'개그맨': 0, '가수': 1, '배우': 2}
 
+# 이미지 사이즈
 w = 255
 h = 0
 
@@ -40,7 +43,8 @@ def pil_to_np(image):
 # 이미지 전처리 함수
 def preprocess_image(image_path, image_width, image_height):
     img = Image.open(image_path)
-    img = img.resize((image_width, image_height))
+    img = img.resize((w, int(w * (img.height / img.width))))
+    h = img.height
     img = np.expand_dims(img, axis=0)
     img = np.array(img)
     if img.shape[-1] == 4:  # PNG 이미지에서 alpha 채널 제거
@@ -74,11 +78,6 @@ for directory in os.listdir(data_dir):
                         # shutil.copyfile(os.path.join(data_dir, directory, first_file), os.path.join("Samples", f"{directory}.jpg"))
 
 
-
-smallest_distance = None
-
-
-
 # 데이터 분할 (학습, 검증 데이터셋)
 from sklearn.model_selection import train_test_split
 
@@ -91,47 +90,6 @@ val_images = [pil_to_np(image) for image in val_images]
 
 
 
-@app.post("/compare")
-async def compare(file: UploadFile = File(...)):
-    img = Image.open(file.file)
-    processed_img = preprocess_image(image_path=sample_file_path, image_width=img.width, image_height=img.height)
-    print("firstfilecheck:", sample_file_path)
-
-    # 모델을 사용하여 특징 벡터 추출
-    features = model.predict(processed_img)
-
-    smallest_distance = None
-    closest_match = None
-
-    # 유사도 계산 함수
-    # DeepFace를 사용하여 유사도 계산
-    for file in os.listdir(sample_dir):
-        if file.endswith(".jpg") or file.endswith(".png"):
-            print("file check:", file)
-            result = DeepFace.verify("person8.jpg", f"Samples/{file}")
-            print(json.dumps(result, indent=2))
-            results.append(result)
-            if result['verified']:
-                print("This person looks exactly like", file.split(".")[0])
-                closest_match = file.split(".")[0]
-                break
-            if smallest_distance is None:
-                smallest_distance = (file.split(".")[0], result['distance'])
-            else:
-                smallest_distance = (file.split(".")[0], result['distance']) if result['distance'] < smallest_distance[
-                    1] else smallest_distance
-
-    else:
-        print(f"No exact match found! Closest match is {smallest_distance[0]}")
-        closest_match = smallest_distance[0]
-
-    # distance: 두 이미지가 얼마나 동떨어져있는지 확인 (distance가 낮으면 두 이미지가 유사하다는 의미)
-
-    return JSONResponse(content={"closest_match":closest_match, "distance":smallest_distance})
-
-
-
-
 samples = np.array(samples)
 labels = np.array(labels)
 results = np.array(results)
@@ -139,7 +97,7 @@ results = np.array(results)
 # Keras 모델 정의
 # 이 모델은 3개의 합성곱 레이어, 최대 풀링 레이어, 완전 연결 레이어로 구성. 입력 이미지의 크기는 (image_height, image_width, 3)로 가정
 model = Sequential([
-    Conv2D(32, (3, 3), activation='relu', input_shape=(255, 255, 3)),
+    Conv2D(32, (3, 3), activation='relu', input_shape=(w, h, 3)),
     MaxPooling2D((2, 2)),
     Flatten(),
     Dense(128, activation='relu'),
@@ -152,7 +110,7 @@ image_input = ct.ImageType(shape=input_dim, bias=[0, 0, 0], scale=1/255)
 
 
 # 모델 컴파일
-model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+# model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
 
 # 모델 학습
 
@@ -187,7 +145,52 @@ input_name = model.input_names[0]  # 첫 번째 입력 텐서의 이름 가져�
 #
 # coreml_model.save("FaceFinder")
 
+
+
+@app.post("/compare", status_code=200)
+def compare(file: UploadFile = File(...)):
+    img = Image.open(file.file)
+    # numpy 처리 과정에서 사이즈 바뀜(?)
+    processed_img = preprocess_image(image_path=sample_file_path, image_width=img.width, image_height=img.height)
+    print("firstfilecheck:", processed_img.shape)
+
+    # 모델을 사용하여 특징 벡터 추출
+    # features = model.predict(processed_img)
+
+    smallest_distance = None
+    closest_match = None
+
+    # 유사도 계산 함수
+    # DeepFace를 사용하여 유사도 계산
+    for file in os.listdir(sample_dir):
+        if file.endswith(".jpg") or file.endswith(".png"):
+            print("file check:", file)
+            result = DeepFace.verify("person8.jpg", f"Samples/{file}")
+            print(json.dumps(result, indent=2))
+            # results.append(result)
+            if result['verified']:
+                print("This person looks exactly like", file.split(".")[0])
+                closest_match = file.split(".")[0]
+                print("Closest match is", file.split(".")[0])
+                smallest_distance = (file.split(".")[0], result['distance'])
+                break
+            if smallest_distance is None:
+                smallest_distance = (file.split(".")[0], result['distance'])
+            else:
+                smallest_distance = (file.split(".")[0], result['distance']) if result['distance'] < smallest_distance[
+                    1] else smallest_distance
+    else:
+        print(f"No exact match found! Closest match is {smallest_distance[0]}")
+        closest_match = file.split(".")[0]
+
+    # distance: 두 이미지가 얼마나 동떨어져있는지 확인 (distance가 낮으면 두 이미지가 유사하다는 의미)
+
+    return JSONResponse(content={"closest_match":closest_match, "distance":smallest_distance})
+
+
+
+
 # 실행
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, host="127.0.0.1", port=8000)

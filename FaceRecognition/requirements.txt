@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+numpy
+deepface
+tensorflow
+
+# 의존성 관리 파일
+# pip install -r requirements.txt
+
