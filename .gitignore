@@ -1,3 +1,5 @@
 .DS_Store
-.idea
-FaceRecognition/__pycache__
+FaceRecognition/.DS_Store
+FaceRecognition/Celeb Dataset
+FaceRecognition/FaceFinder_model.h5
+FaceRecognition/.idea/
