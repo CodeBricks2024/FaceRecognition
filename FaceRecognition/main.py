@@ -45,15 +45,18 @@ def preprocess_image(image_path, image_width, image_height):
     img = Image.open(image_path)
     img = img.resize((w, int(w * (img.height / img.width))))
     h = img.height
-    img = np.expand_dims(img, axis=0)
+    # img = np.expand_dims(img, axis=0)
     img = np.array(img)
     if img.shape[-1] == 4:  # PNG 이미지에서 alpha 채널 제거
         img = img[:, :, :3]
     return img
 
+
+
 # 이미지 크기 조정 및 샘플 이미지 생성 함수
 for directory in os.listdir(data_dir):
         joined = os.path.join(data_dir, directory)
+        # image_data_resize(joined)
         if os.path.isdir(joined):
                 # 사진에 사람 얼굴이 1명만 존재하는지 확인 후, 그렇지 않으면 이미지 삭제
                 # face_detector.remove_non_single_faces(joined)
@@ -61,6 +64,9 @@ for directory in os.listdir(data_dir):
 
                 first_file = os.listdir(joined)[0]
                 sample_file_path = joined + "/" + first_file
+                # Celeb Dataset/Lee Eun ji/개그맨 이은지_67.jpg
+
+                # print("samplefilepath:", sample_file_path)
                 if os.path.isfile(sample_file_path):
                         # 이미지 리사이징 및 전처리
                         img = Image.open(sample_file_path)
@@ -151,8 +157,7 @@ input_name = model.input_names[0]  # 첫 번째 입력 텐서의 이름 가져�
 def compare(file: UploadFile = File(...)):
     img = Image.open(file.file)
     # numpy 처리 과정에서 사이즈 바뀜(?)
-    processed_img = preprocess_image(image_path=sample_file_path, image_width=img.width, image_height=img.height)
-    print("firstfilecheck:", processed_img.shape)
+    # processed_img = preprocess_image(image_path=sample_file_path, image_width=img.width, image_height=img.height)
 
     # 모델을 사용하여 특징 벡터 추출
     # features = model.predict(processed_img)
@@ -165,7 +170,7 @@ def compare(file: UploadFile = File(...)):
     for file in os.listdir(sample_dir):
         if file.endswith(".jpg") or file.endswith(".png"):
             print("file check:", file)
-            result = DeepFace.verify("person8.jpg", f"Samples/{file}")
+            result = DeepFace.verify(np.array(img), f"Samples/{file}")
             print(json.dumps(result, indent=2))
             # results.append(result)
             if result['verified']:
@@ -176,12 +181,13 @@ def compare(file: UploadFile = File(...)):
                 break
             if smallest_distance is None:
                 smallest_distance = (file.split(".")[0], result['distance'])
+                closest_match = (file.split(".")[0], result['distance'])
             else:
                 smallest_distance = (file.split(".")[0], result['distance']) if result['distance'] < smallest_distance[
                     1] else smallest_distance
     else:
         print(f"No exact match found! Closest match is {smallest_distance[0]}")
-        closest_match = file.split(".")[0]
+        closest_match = smallest_distance[0]
 
     # distance: 두 이미지가 얼마나 동떨어져있는지 확인 (distance가 낮으면 두 이미지가 유사하다는 의미)
 
