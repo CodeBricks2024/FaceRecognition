@@ -8,8 +8,11 @@ from tensorflow.keras.models import Sequential, load_model
 from tensorflow.keras.layers import Dense, Flatten, MaxPooling2D, Conv2D
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Depends
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, HttpUrl
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
 from typing import Optional
+
+import face_analyzer
 
 # FASTAPI 초기화
 app = FastAPI()
@@ -172,18 +175,14 @@ def test(request: TestRequest):
 class CompareRequest(BaseModel):
     image_file: UploadFile = Form(...)
 
-
-
 # 비교 엔드포인트 정의
 @app.post("/compare", status_code=200)
-# def compare(file: UploadFile = File(...)):
-# async def compare(request: CompareRequest = Depends()):
 async def compare(request: CompareRequest = Depends()):
     try:
         # 이미지 파일 읽어오기
         content = await request.image_file.read()
         img = Image.open(BytesIO(content))
-        # img = Image.open(file.file)
+
         # numpy 처리 과정에서 사이즈 바뀜(?)
         # processed_img = preprocess_image(image_path=sample_file_path, image_width=img.width, image_height=img.height)
 
@@ -216,13 +215,15 @@ async def compare(request: CompareRequest = Depends()):
             print(f"No exact match found! Closest match is {smallest_distance[0]}")
             closest_match = smallest_distance[0]
 
-        print("small distances check:", smallest_distance[0], smallest_distance[1])
-        return JSONResponse(content={"closest_match": closest_match, "distance": smallest_distance[1
-        ]})
+        response = face_analyzer.face_analyze(np.array(img))
+        response.distance = smallest_distance[1]
+        response.closest_match = closest_match
+        return JSONResponse(content=jsonable_encoder(response))
+
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # distance: 두 이미지가 얼마나 동떨어져있는지 확인 (distance가 낮으면 두 이미지가 유사하다는 의미)
+
 
 
 
