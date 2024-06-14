@@ -13,6 +13,8 @@ from pydantic import BaseModel
 from typing import Optional
 
 import face_analyzer
+from ImageEncoding import encode_image_to_base64
+from MatchModel import Match
 
 # FASTAPI 초기화
 app = FastAPI()
@@ -26,6 +28,9 @@ label_map = {'개그맨': 0, '가수': 1, '배우': 2}
 # 이미지 사이즈
 w = 255
 h = 0
+
+# (distance 기준 오름차순) 가장 유사한 인물 순으로 정보 담는 배열
+distanceArr: list[Match] = []
 
 # 샘플 이미지 디렉토리
 sample_dir = "Samples"
@@ -204,28 +209,59 @@ async def compare(request: CompareRequest = Depends()):
                     closest_match = file.split(".")[0]
                     print("Closest match is", file.split(".")[0])
                     smallest_distance = (file.split(".")[0], result['distance'])
+                    print("smallest distance: ", smallest_distance)
+                    createMatchCollection(closest_match, smallest_distance)
                     break
                 if smallest_distance is None:
                     smallest_distance = (file.split(".")[0], result['distance'])
                     closest_match = (file.split(".")[0], result['distance'])
+
+                    print("smallest distance2: ", smallest_distance)
+                    createMatchCollection(closest_match[0], smallest_distance)
                 else:
                     smallest_distance = (file.split(".")[0], result['distance']) if result['distance'] < smallest_distance[
                         1] else smallest_distance
+                    print("smallest distance3: ", smallest_distance)
+                    # createMatchCollection(closest_match[0], smallest_distance)
         else:
             print(f"No exact match found! Closest match is {smallest_distance[0]}")
             closest_match = smallest_distance[0]
+            createMatchCollection(closest_match, smallest_distance)
+
+        closest_match_img_path = os.path.join(sample_dir, f"{closest_match}.jpg")
+        closest_match_img = encode_image_to_base64(closest_match_img_path)
 
         response = face_analyzer.face_analyze(np.array(img))
+        response.closest_match_img = closest_match_img
         response.distance = smallest_distance[1]
         response.closest_match = closest_match
+        # distance 값을 기준으로 오름차순 정렬
+        response.distances = sorted(distanceArr, key=lambda match: match.distance)
+
+        # distance 배열 초기화
+        distanceArr.clear()
+
         return JSONResponse(content=jsonable_encoder(response))
 
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+def createMatchCollection(closest_match, smallest_distance):
+    if len(distanceArr) >= 5:
+        return
+    else:
+        # name을 기준으로 중복 제거
+        seen_names = set()
 
+        for match in distanceArr:
+            if match.name in seen_names:
+                return
 
-
+        closest_match_img_path = os.path.join(sample_dir, f"{closest_match}.jpg")
+        print("closest image append: ", closest_match_img_path)
+        closest_match_img = encode_image_to_base64(closest_match_img_path)
+        distanceArr.append(Match(image=closest_match_img, name=smallest_distance[0], distance=smallest_distance[1]))
+        seen_names.add(smallest_distance[0])
 
 
 
