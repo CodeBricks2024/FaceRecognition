@@ -13,6 +13,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 import face_analyzer
+import face_detector
 from ImageEncoding import encode_image_to_base64
 from MatchModel import Match
 
@@ -75,7 +76,7 @@ for directory in os.listdir(data_dir):
         if os.path.isdir(joined):
                 # 사진에 사람 얼굴이 1명만 존재하는지 확인 후, 그렇지 않으면 이미지 삭제
                 # face_detector.remove_non_single_faces(joined)
-                # face_detector.crop_face(joined)
+                face_detector.crop_face(joined)
 
                 first_file = os.listdir(joined)[0]
                 sample_file_path = joined + "/" + first_file
@@ -188,6 +189,8 @@ async def compare(request: CompareRequest = Depends()):
         content = await request.image_file.read()
         img = Image.open(BytesIO(content))
 
+        print("img check: ", img)
+
         # numpy 처리 과정에서 사이즈 바뀜(?)
         # processed_img = preprocess_image(image_path=sample_file_path, image_width=img.width, image_height=img.height)
 
@@ -201,6 +204,7 @@ async def compare(request: CompareRequest = Depends()):
         for file in os.listdir(sample_dir):
             if file.endswith(".jpg") or file.endswith(".png"):
                 print("file check:", file)
+                print("file path check: ", f"Samples/{file}")
                 result = DeepFace.verify(np.array(img), f"Samples/{file}")
                 print(json.dumps(result, indent=2))
                 # results.append(result)
