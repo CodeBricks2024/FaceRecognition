@@ -12,6 +12,7 @@ from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.middleware.cors import CORSMiddleware
+import asyncio
 
 import face_analyzer
 import face_detector
@@ -205,6 +206,7 @@ class CompareRequest(BaseModel):
 # 비교 엔드포인트 정의
 @app.post("/compare", status_code=200)
 async def compare(request: CompareRequest = Depends()):
+    await asyncio.sleep(20)  # 비동기로 처리되는 작업 예시
     try:
         # 이미지 파일 읽어오기
         content = await request.image_file.read()
