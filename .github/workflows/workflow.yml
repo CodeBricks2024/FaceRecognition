@@ -22,6 +22,12 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+       - name: Login to Heroku Container Registry
+        env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
+        run: echo "$HEROKU_API_KEY" | docker login --username=_ --password-stdin registry.heroku.com
+
+
       - name: Build and push Docker image to Heroku Registry
         run: |
           docker buildx build --file ./FaceRecognition/Dockerfile --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web --push .
