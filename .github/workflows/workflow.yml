@@ -25,7 +25,7 @@ jobs:
       - name: Build and push Docker image to Heroku Registry
         run: |
           docker buildx build --file ./FaceRecognition/Dockerfile --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web --push .
-      - name: Release to Heroku
-        run: |
-          docker run --rm -e HEROKU_API_KEY="${{ secrets.HEROKU_API_KEY }}" krishnasrinivas/heroku-deploy:$HEROKU_APP_NAME
+          docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web  
 
+      - name: Release to Heroku
+        run: heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
