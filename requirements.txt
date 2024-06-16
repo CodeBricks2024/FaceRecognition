@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+pydantic
+deepface
+numpy
+Pillow
+gunicorn

@@ -1,0 +1,24 @@
+# Use the official Python image as a base image
+FROM python:3.9-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+
+# 작업 디렉토리를 설정합니다.
+WORKDIR /app
+# 필요한 파일들을 복사합니다.
+COPY requirements.txt .
+
+
+# 패키지를 설치합니다.
+RUN pip3 install deepface
+COPY requirements.txt /requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code to the working directory
+COPY . /app/
+
+# Command to run the FastAPI application using uvicorn
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
