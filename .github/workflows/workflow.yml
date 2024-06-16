@@ -18,7 +18,5 @@ jobs:
 
       - name: Build and push Docker image to Heroku Registry
         run: |
-          docker buildx build --file FaceRecognition/Dockerfile --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web FaceRecognition/.
-          echo "${{ secrets.HEROKU_API_KEY }}" | docker login --username=_ --password-stdin registry.heroku.com
-          docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
+          docker buildx build --file FaceRecognition/Dockerfile --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web --push FaceRecognition/.
 
