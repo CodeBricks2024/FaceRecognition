@@ -327,7 +327,7 @@ from MatchModel import Match
 app = FastAPI()
 
 # 저장된 모델 로드
-saved_model = load_model("FaceFinder_model.h5")
+# saved_model = load_model("FaceFinder_model.h5")
 
 # 라벨 매핑 (예시)
 label_map = {'개그맨': 0, '가수': 1, '배우': 2}
