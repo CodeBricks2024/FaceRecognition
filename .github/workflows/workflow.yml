@@ -1,4 +1,4 @@
-name: Deploy to Heroku
+name: Push Container to Heroku
 
 on:
   push:
@@ -6,27 +6,22 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v2
 
       - name: Set up Docker Buildx
+        id: docker_buildx
         uses: docker/setup-buildx-action@v1
 
-      - name: Log in to Heroku Container Registry
-        env:
-          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
-        run: |
-          docker login --username=_ --password=$(echo "$HEROKU_API_KEY" | base64 -d) registry.heroku.com
-
-      - name: Build and push Docker image to Heroku
-        run: |
-          docker build -t registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web .
-          docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web
-
-      - name: Release the image on Heroku
-        run: heroku container:release web --app ${{ secrets.HEROKU_APP_NAME }}
-
+      - name: Build, Push and Deploy to Heroku
+        id: heroku
+        uses: jctaveras/heroku-deploy@v1.0.0
+        with:
+          email: ${{ secrets.HEROKU_EMAIL }}
+          api_key: ${{ secrets.HEROKU_API_KEY }}
+          app_name: ${{ secrets.HEROKU_APP_NAME }}
+          dockerfile: "FaceRecognition"
