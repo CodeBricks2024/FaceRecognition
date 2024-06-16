@@ -28,6 +28,7 @@ origins = [
     "http://192.168.0.13",  # 추가: macOS의 로컬 IP 주소
     "http://114.70.121.21",  # 추가: macOS의 공인 IP 주소
     "http://192.168.0.25",  # 추가: iOS 디바이스 IP 주소
+    "https://facefinder-dad2a7cf64e7.herokuapp.com"
 ]
 
 app.add_middleware(
@@ -266,6 +267,7 @@ async def compare(request: CompareRequest = Depends()):
         # distance 배열 초기화
         distanceArr.clear()
 
+
         return JSONResponse(content=jsonable_encoder(response))
 
     except Exception as e:
@@ -299,3 +301,5 @@ if __name__ == "__main__":
     # uvicorn.run(app, host="127.0.0.1", port=8000)
     # uvicorn.run(app, host="0.0.0.0", port=8000)
     uvicorn.run(app, host="192.168.0.13", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # uvicorn.run(app, host="192.168.0.13", port=8000)
