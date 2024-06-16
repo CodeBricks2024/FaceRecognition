@@ -24,8 +24,7 @@ jobs:
 
       - name: Build and push Docker image to Heroku Registry
         run: |
-          #docker buildx build --file ./FaceRecognition/Dockerfile --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web .
-           docker buildx build --platform linux/amd64 --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web --push .
+          docker buildx build --file ./FaceRecognition/Dockerfile --tag registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web --push .
           docker push registry.heroku.com/${{ secrets.HEROKU_APP_NAME }}/web  
 
       - name: Install Heroku CLI
