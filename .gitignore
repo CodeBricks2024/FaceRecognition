@@ -1,5 +1,5 @@
 .DS_Store
 FaceRecognition/.DS_Store
 FaceRecognition/Celeb Dataset
-FaceRecognition/FaceFinder_model.h5
+#FaceRecognition/FaceFinder_model.h5
 FaceRecognition/.idea/
