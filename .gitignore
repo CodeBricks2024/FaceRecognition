@@ -3,3 +3,6 @@ FaceRecognition/.DS_Store
 FaceRecognition/Celeb Dataset
 FaceRecognition/FaceFinder_model.h5
 FaceRecognition/.idea/
+
+FaceRecognition/code_bricks_venv/
+
